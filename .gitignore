@@ -1,0 +1,30 @@
+.mvn
+.settings
+target/**
+bin/**
+/src/main/webui/dist/**
+/src/main/webui/node_modules/**
+/src/main/resources/static/**
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+### NetBeans ###
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+uploads/
+src/main/java/me/bassihassan/main.java
