@@ -1,12 +1,11 @@
 package me.bassihassan.core;
 
-import me.bassihassan.annotation.RowCell;
-import me.bassihassan.exception.VoofException;
-import me.bassihassan.option.Options;
-import me.bassihassan.annotation.RowIndex;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import org.apache.commons.beanutils.ConvertUtils;
+import me.bassihassan.annotation.RowCell;
+import me.bassihassan.annotation.RowIndex;
+import me.bassihassan.exception.VoofException;
+import me.bassihassan.option.Options;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.poi.ss.usermodel.*;
@@ -17,7 +16,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static java.lang.String.valueOf;
+import static me.bassihassan.util.Utils.formatCellValue;
+import static org.apache.commons.beanutils.ConvertUtils.convert;
 import static org.apache.commons.collections4.PredicateUtils.notNullPredicate;
+import static org.apache.commons.lang3.math.NumberUtils.isCreatable;
 
 public class Unmarshaller {
     private Logger logger = Logger.getLogger(Unmarshaller.class);
@@ -111,21 +114,19 @@ public class Unmarshaller {
 
     private <T> CellError setCellToField(Row currentRow, T instance, Field field, int column) {
         Cell cell = currentRow.getCell(column);
-        Object convertValue = new Object();
-        Object value = new Object();
+        Object convertValue;
+        Object value;
         if (cell != null) {
-            value = dataFormatter.formatCellValue(cell);
-            field.setAccessible(true);
-            convertValue = ConvertUtils.convert(value, field.getType());
-            try {
-                field.set(instance, convertValue);
-            } catch (IllegalAccessException e) {
-                throw new VoofException(e);
-            }
+            value = formatCellValue(field, cell);
+            convertValue = convert(value, field.getType());
+            setFieldData(instance, field, convertValue);
+
+            if (field.getType().getTypeName() == String.class.getTypeName())
+                return cell.getCellTypeEnum().equals(CellType.NUMERIC) ? new CellError(valueOf(column), valueOf(value), "Value should be ".concat(field.getType().getSimpleName())) : null;
+            else
+                return new Double(valueOf(convertValue)).intValue() != (isCreatable(valueOf(value)) ? new Double(valueOf(value)).intValue() : Integer.MIN_VALUE) ? new CellError(valueOf(column), valueOf(value), "Value should be ".concat(field.getType().getSimpleName())) : null;
         }
-
-
-        return !String.valueOf(convertValue).equals(value) ? new CellError(String.valueOf(column), String.valueOf(value), "Value should be a ".concat(field.getType().getSimpleName())) : null;
+        return null;
     }
 
     private <T> void setFieldData(T instance, Field field, Object o) {
